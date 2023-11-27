@@ -1,95 +1,77 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+import Image from "next/image";
+import axios from "axios";
+import React, { use, useEffect, useState } from "react";
+import { ethers, BrowserProvider } from "ethers";
 
-export default function Home() {
+function Home() {
+  const [fileImg, setFileImg] = useState("");
+  const [provider, setProvider] = useState<BrowserProvider>();
+  const [address, setAddress] = useState("");
+  const [signer, setSigner] = useState<ethers.Signer>();
+
+  async function loadProvider() {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    if (provider) {
+      console.log("Ethereum successfully detected!");
+
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+
+      const signer = await provider.getSigner();
+
+      setAddress(accounts[0]);
+      setProvider(provider);
+      setSigner(signer);
+    } else {
+      console.log("Please install MetaMask!");
+    }
+  }
+
+  async function sendFileToIPFS() {
+    if (fileImg) {
+      try {
+        const formData = new FormData();
+        formData.append("file", fileImg);
+
+        const resFile = await axios({
+          method: "post",
+          url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
+          data: formData,
+          headers: {
+            pinata_api_key: `${process.env.PINATA_API_KEY}`,
+            pinata_secret_api_key: `${process.env.PINATA_SECRET}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        const ImgHash = `ipfs://${resFile.data.IpfsHash}`;
+        console.log(ImgHash);
+      } catch (error) {
+        console.log("Error sending File to IPFS: ", error);
+      }
+    }
+  }
+
+  useEffect(() => {
+    loadProvider();
+  }, []);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <div>
+      <input
+        type="file"
+        onChange={(e) => {
+          const file = e.target.files![0];
+          setFileImg(URL.createObjectURL(file));
+        }}
+      />
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+      <Image src={fileImg} alt="img" />
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+      <button onClick={sendFileToIPFS}>Mint NFT</button>
+    </div>
+  );
 }
+
+export default Home;
