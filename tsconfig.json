@@ -1,14 +1,3 @@
-// {
-//   "compilerOptions": {
-//     "target": "es2020",
-//     "module": "commonjs",
-//     "esModuleInterop": true,
-//     "strict": true,
-//     "skipLibCheck": true,
-//     "resolveJsonModule": true
-//   }
-// }
-
 {
   "compilerOptions": {
     "target": "es5",
@@ -35,6 +24,12 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "scripts/pinFile.ts"
+  ],
   "exclude": ["node_modules"]
 }
