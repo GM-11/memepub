@@ -2,10 +2,10 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  const [owner, otherAccount] = await ethers.getSigners();
-  const chat = await ethers.deployContract("MemeFT");
-  console.log("MemeFT deployed to:", await chat.getAddress());
-  console.log("MemeFT deployed by:", owner.address);
+  const memeFT = await ethers.deployContract("MemeFT");
+  const memeData = await ethers.deployContract("MemeData");
+  console.log("MemeFT deployed to:", await memeFT.getAddress());
+  console.log("MemeData deployed to:", await memeData.getAddress());
 }
 
 main().catch((error) => {
