@@ -40,7 +40,6 @@ node_modules
 
 # Hardhat files
 /cache
-/artifacts
 
 # TypeChain files
 /typechain
@@ -49,3 +48,5 @@ node_modules
 # solidity-coverage files
 /coverage
 /coverage.json
+
+artifacts/@openzeppelin
