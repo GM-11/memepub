@@ -3,11 +3,19 @@ import axios from "axios";
 import React, { use, useEffect, useState } from "react";
 import { ethers, BrowserProvider } from "ethers";
 
+import MemeFT from "../artifacts/contracts/MemeFT.sol/MemeFT.json";
+import MemeData from "../artifacts/contracts/MemeData.sol/MemeData.json";
+
 function Home() {
   const [fileImg, setFileImg] = useState("");
+  const [nftName, setNftName] = useState("");
   const [provider, setProvider] = useState<BrowserProvider>();
   const [address, setAddress] = useState("");
   const [signer, setSigner] = useState<ethers.Signer>();
+  const [nfts, setNfts] = useState<any[]>([]);
+
+  const memeDataContractAddress = process.env.MEME_DATA_CONTRACT_ADDRESS;
+  const memeFTContractAddress = process.env.MEME_FT_CONTRACT_ADDRESS;
 
   async function loadProvider() {
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -28,7 +36,19 @@ function Home() {
     }
   }
 
-  async function sendFileToIPFS() {
+  async function loadNFTS() {
+    const dataContract = new ethers.Contract(
+      memeDataContractAddress!,
+      MemeData.abi,
+      provider
+    );
+
+    const data = await dataContract.getMemes();
+
+    setNfts(data);
+  }
+
+  async function sendFileToIPFS(): Promise<string | undefined> {
     if (fileImg) {
       try {
         const formData = new FormData();
@@ -45,16 +65,36 @@ function Home() {
           },
         });
 
-        const ImgHash = `ipfs://${resFile.data.IpfsHash}`;
-        console.log(ImgHash);
+        return `ipfs://${resFile.data.IpfsHash}`;
       } catch (error) {
-        console.log("Error sending File to IPFS: ", error);
+        return "wrong";
       }
     }
   }
 
+  async function mintNFT() {
+    const memeDataContract = new ethers.Contract(
+      memeDataContractAddress!,
+      MemeData.abi,
+      signer
+    );
+
+    const memeFTContract = new ethers.Contract(
+      memeFTContractAddress!,
+      MemeFT.abi,
+      signer
+    );
+
+    const ipfsHash = await sendFileToIPFS();
+
+    await memeFTContract.mintNFT(address, ipfsHash);
+    await memeDataContract.createMeme(nftName, address, ethers.toBigInt(1));
+  }
+
   useEffect(() => {
     loadProvider();
+    // loadNFTS();
+
   }, []);
 
   return (
@@ -67,9 +107,17 @@ function Home() {
         }}
       />
 
+      <br />
+      <input
+        type="text"
+        onChange={(e) => {
+          setNftName(e.target.value);
+        }}
+      />
+
       <Image src={fileImg} alt="img" />
 
-      <button onClick={sendFileToIPFS}>Mint NFT</button>
+      <button onClick={mintNFT}>Mint NFT</button>
     </div>
   );
 }
