@@ -16,11 +16,10 @@ contract MemeData {
 
     function createMeme(
         string memory name,
-        string memory IPFSuri,
-        uint256 price
+        string memory IPFSuri
     ) public returns (uint256) {
         uint256 memeId = _memeIdCounter;
-        memes[memeId] = Meme(memeId, name, IPFSuri, price, msg.sender);
+        memes[memeId] = Meme(memeId, name, IPFSuri, 0, msg.sender);
 
         _memeIdCounter += 1;
 
