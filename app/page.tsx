@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import axios from "axios";
 import React, { use, useEffect, useState } from "react";
@@ -5,17 +7,17 @@ import { ethers, BrowserProvider } from "ethers";
 
 import MemeFT from "../artifacts/contracts/MemeFT.sol/MemeFT.json";
 import MemeData from "../artifacts/contracts/MemeData.sol/MemeData.json";
+import Link from "next/link";
 
 function Home() {
   const [fileImg, setFileImg] = useState("");
-  const [nftName, setNftName] = useState("");
   const [provider, setProvider] = useState<BrowserProvider>();
   const [address, setAddress] = useState("");
   const [signer, setSigner] = useState<ethers.Signer>();
-  const [nfts, setNfts] = useState<any[]>([]);
+  const [memes, setMemes] = useState<any[]>([]);
 
-  const memeDataContractAddress = process.env.MEME_DATA_CONTRACT_ADDRESS;
-  const memeFTContractAddress = process.env.MEME_FT_CONTRACT_ADDRESS;
+  const memeDataContractAddress = "0xd48eaa40afF70bCdd0fc478b2FB4Db36D696efcE";
+  const memeFTContractAddress = "0xaf97C6AC6F97Db15da6b746955C8bd67E3f719C0";
 
   async function loadProvider() {
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -36,88 +38,51 @@ function Home() {
     }
   }
 
-  async function loadNFTS() {
-    const dataContract = new ethers.Contract(
-      memeDataContractAddress!,
-      MemeData.abi,
-      provider
-    );
+  async function loadMemes() {
+    try {
+      const dataContract = new ethers.Contract(
+        memeDataContractAddress!,
+        MemeData.abi,
+        signer
+      );
 
-    const data = await dataContract.getMemes();
+      const data = await dataContract.getAllMemes();
 
-    setNfts(data);
-  }
-
-  async function sendFileToIPFS(): Promise<string | undefined> {
-    if (fileImg) {
-      try {
-        const formData = new FormData();
-        formData.append("file", fileImg);
-
-        const resFile = await axios({
-          method: "post",
-          url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
-          data: formData,
-          headers: {
-            pinata_api_key: `${process.env.PINATA_API_KEY}`,
-            pinata_secret_api_key: `${process.env.PINATA_SECRET}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-
-        return `ipfs://${resFile.data.IpfsHash}`;
-      } catch (error) {
-        return "wrong";
-      }
+      setMemes(data);
+    } catch (error) {
+      console.log(error);
     }
-  }
-
-  async function mintNFT() {
-    const memeDataContract = new ethers.Contract(
-      memeDataContractAddress!,
-      MemeData.abi,
-      signer
-    );
-
-    const memeFTContract = new ethers.Contract(
-      memeFTContractAddress!,
-      MemeFT.abi,
-      signer
-    );
-
-    const ipfsHash = await sendFileToIPFS();
-
-    await memeFTContract.mintNFT(address, ipfsHash);
-    await memeDataContract.createMeme(nftName, address, ethers.toBigInt(1));
   }
 
   useEffect(() => {
     loadProvider();
-    // loadNFTS();
-
   }, []);
+
+  useEffect(() => {
+    loadMemes();
+  });
 
   return (
     <div>
-      <input
-        type="file"
-        onChange={(e) => {
-          const file = e.target.files![0];
-          setFileImg(URL.createObjectURL(file));
-        }}
-      />
+      <p>
+        Your address: <strong>{address}</strong>
+      </p>
 
-      <br />
-      <input
-        type="text"
-        onChange={(e) => {
-          setNftName(e.target.value);
-        }}
-      />
+      <Link href="/postMeme">Post Meme</Link>
 
-      <Image src={fileImg} alt="img" />
-
-      <button onClick={mintNFT}>Mint NFT</button>
+      {memes.map((meme) => {
+        return (
+          <div key={meme[0]}>
+            {/* <img
+              src={`https://gateway.pinata.cloud/ipfs/${meme[2]}`}
+              width={200}
+              height={200}
+              alt=""
+            /> */}
+            <p>{`${meme}`}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }
