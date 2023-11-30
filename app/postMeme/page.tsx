@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import fs from "fs";
-import React, { use, useEffect, useState } from "react";
-import { ethers } from "ethers";
+import React, { useEffect, useState } from "react";
+import { ethers, BrowserProvider } from "ethers";
 import pinataSdk, { PinataPinOptions } from "@pinata/sdk";
 import MemeFT from "../../artifacts/contracts/MemeFT.sol/MemeFT.json";
 import MemeData from "../../artifacts/contracts/MemeData.sol/MemeData.json";
@@ -11,7 +11,7 @@ import MemeData from "../../artifacts/contracts/MemeData.sol/MemeData.json";
 function Home() {
   const [fileImg, setFileImg] = useState("");
   const [fileName, setfileName] = useState("");
-  //   const [provider, setProvider] = useState<BrowserProvider>();
+  const [provider, setProvider] = useState<BrowserProvider>();
   const [address, setAddress] = useState("");
   const [signer, setSigner] = useState<ethers.Signer>();
 
@@ -28,16 +28,11 @@ function Home() {
     const provider = new ethers.BrowserProvider(window.ethereum);
     if (provider) {
       console.log("Ethereum successfully detected!");
-
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-
-      const signer = await provider.getSigner();
-
       setAddress(accounts[0]);
-      //   setProvider(provider);
-      setSigner(signer);
+      setProvider(provider);
     } else {
       console.log("Please install MetaMask!");
     }
@@ -74,11 +69,11 @@ function Home() {
       signer
     );
 
-    // const memeFTContract = new ethers.Contract(
-    //   memeFTContractAddress!,
-    //   MemeFT.abi,
-    //   signer
-    // );
+    const memeFTContract = new ethers.Contract(
+      memeFTContractAddress!,
+      MemeFT.abi,
+      signer
+    );
 
     const ipfsHash = await sendFileToIPFS();
 
